@@ -9,7 +9,7 @@ public class RoomScheduler {
 
 	public static void main(String[] args) {
 		Boolean end = false;
-		ArrayList<Room> rooms = new ArrayList<Room>();
+		ArrayList<Room> rooms = new ArrayList<>();
 
 		while (!end) {
 			switch (mainMenu()) {
@@ -115,7 +115,7 @@ public class RoomScheduler {
 
 		Room curRoom = getRoomFromName(roomList, name);
 
-		Meeting meeting = new Meeting(startTimestamp, endTimestamp, subject);
+		com.marist.mscs721.Meeting meeting = new com.marist.mscs721.Meeting(startTimestamp, endTimestamp, subject);
 
 		curRoom.addMeeting(meeting);
 
