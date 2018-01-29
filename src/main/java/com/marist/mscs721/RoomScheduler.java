@@ -1,19 +1,21 @@
 package com.marist.mscs721;
 
+import com.google.gson.Gson;
+
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class RoomScheduler {
 	protected static Scanner keyboard = new Scanner(System.in);
-
+	private static String jsonDir = "C:/Users/genti/GG_HOME_FOLDER/marist/Spring_2018/mscs721/homework/hw_1/json_files/";
 	public static void main(String[] args) {
 		Boolean end = false;
 		ArrayList<Room> rooms = new ArrayList<>();
-
 		while (!end) {
 			switch (mainMenu()) {
-
 			case 1:
 				System.out.println(addRoom(rooms));
 				break;
@@ -47,6 +49,12 @@ public class RoomScheduler {
 		return "";
 	}
 
+	/**
+	 * mainMenu
+	 * Display the menu and user selection
+	 *
+	 * @return int
+	 * */
 	protected static int mainMenu() {
 		System.out.println("Main Menu:");
 		System.out.println("  1 - Add a room");
@@ -56,6 +64,23 @@ public class RoomScheduler {
 		System.out.println("  5 - List Rooms");
 		System.out.println("Enter your selection: ");
 
+		/**
+		 * Make sure we have an int.
+		 * Display the menu until they insert an integer
+		 * Let the user know that they need to input an int.
+		 * Display the menu again
+		 */
+		while(!keyboard.hasNextInt()){
+			System.out.println("Error: Make sure you enter an integer.");
+			System.out.println("Main Menu:");
+			System.out.println("  1 - Add a room");
+			System.out.println("  2 - Remove a room");
+			System.out.println("  3 - Schedule a room");
+			System.out.println("  4 - List Schedule");
+			System.out.println("  5 - List Rooms");
+			System.out.println("Enter your selection: ");
+			keyboard.next();
+		}
 		return keyboard.nextInt();
 	}
 
@@ -81,9 +106,18 @@ public class RoomScheduler {
 	protected static String listRooms(ArrayList<Room> roomList) {
 		System.out.println("Room Name - Capacity");
 		System.out.println("---------------------");
-
+		Gson gs = new Gson();
+		String json;
 		for (Room room : roomList) {
+			json = gs.toJson(room);
 			System.out.println(room.getName() + " - " + room.getCapacity());
+			System.out.println("Json: " + " - " + json);
+
+			try (PrintWriter out = new PrintWriter(jsonDir+room.getName()+".json")) {
+				out.println(json);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
 		}
 
 		System.out.println("---------------------");

@@ -6,13 +6,13 @@ public class Room {
 	
 	private String name;
 	private int capacity;
-	private ArrayList<com.marist.mscs721.Meeting> meetings;
+	private ArrayList<Meeting> meetings;
 	
 	
 	public Room(String newName, int newCapacity) {
 		setName(newName);
 		setCapacity(newCapacity);
-		setMeetings(new ArrayList<com.marist.mscs721.Meeting>());
+		setMeetings(new ArrayList<Meeting>());
 	}
 
 	public void addMeeting(com.marist.mscs721.Meeting newMeeting) {
@@ -39,12 +39,12 @@ public class Room {
 	}
 
 
-	public ArrayList<com.marist.mscs721.Meeting> getMeetings() {
+	public ArrayList<Meeting> getMeetings() {
 		return meetings;
 	}
 
 
-	public void setMeetings(ArrayList<com.marist.mscs721.Meeting> meetings) {
+	public void setMeetings(ArrayList<Meeting> meetings) {
 		this.meetings = meetings;
 	}
 	
