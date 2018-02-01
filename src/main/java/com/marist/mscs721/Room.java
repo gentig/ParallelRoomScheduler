@@ -15,7 +15,7 @@ public class Room {
 		setMeetings(new ArrayList<Meeting>());
 	}
 
-	public void addMeeting(com.marist.mscs721.Meeting newMeeting) {
+	public void addMeeting(Meeting newMeeting) {
 		this.getMeetings().add(newMeeting);
 	}
 
