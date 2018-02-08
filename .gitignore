@@ -3,3 +3,5 @@
 *.gitignore
 /src/out
 /target
+/log
+/jsonfiles

@@ -1,8 +1,10 @@
 package com.marist.mscs721;
 
 import com.google.gson.Gson;
+import org.apache.log4j.Logger;
 
 import java.io.*;
+import java.nio.file.*;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,14 +13,19 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.stream.Stream;
 
 public class RoomScheduler {
+    final static Logger logger = Logger.getLogger(RoomScheduler.class);
 	protected static Scanner keyboard = new Scanner(System.in);
-	private static String jsonDir = "C:/Users/genti/GG_HOME_FOLDER/marist/Spring_2018/mscs721/homework/hw_1/json_files/";
+	//jsonDir is a path outside the project. Not used for now. I might use it later
+    //private static String jsonDir = System.getProperty("user.home").replace("\\","/") + "/GG_HOME_FOLDER/marist/Spring_2018/mscs721/homework/hw_1/json_files/";
     public static final String DEVIDER = "---------------------";
-	public static void main(String[] args) {
+
+	public static void main(String[] args) throws IOException {
 		Boolean end = false;
 		ArrayList<Room> rooms = new ArrayList<>();
+        logger.info("This is the logger in action");
         while (!end) {
             switch (mainMenu()) {
                 case 1:
@@ -43,7 +50,7 @@ public class RoomScheduler {
                     System.out.println(importRooms(rooms));
                     break;
                 default:
-                    System.out.println("Error");
+                    System.out.println("Wrong menu selection");
             }
 
         }
@@ -138,18 +145,22 @@ public class RoomScheduler {
      * @param: roomList the list of rooms
      * @return String
      */
-	protected static String exportRooms(ArrayList<Room> roomList){
+	protected static String exportRooms(ArrayList<Room> roomList) throws IOException{
         System.out.println("Export rooms");
         System.out.println(DEVIDER);
         Gson gs = new Gson();
-        String json;
+        ArrayList<String> list = new ArrayList<>();
+        String jsonRoom, roomName = "";
         for (Room room : roomList) {
-            json = gs.toJson(room);
-            System.out.println("Json: " + " - " + json);
-
-            try (PrintWriter out = new PrintWriter(jsonDir+room.getName()+".json")) {
-                out.println(json);
-            } catch (FileNotFoundException e) {
+            jsonRoom = gs.toJson(room,Room.class);
+            list.add(jsonRoom);
+        }
+        for (String jsonString: list) {
+            roomName = gs.fromJson(jsonString, Room.class).getName();
+            try {
+                //Passing bytes to the write fixes the problem with iterable argument we need here
+                Files.write(Paths.get("jsonfiles/" + roomName + ".json"), jsonString.getBytes());
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -166,35 +177,20 @@ public class RoomScheduler {
      * @param roomList the list of rooms
      * @return String
      */
-    protected static String importRooms(ArrayList<Room> roomList){
+    protected static String importRooms(ArrayList<Room> roomList) throws IOException{
         Gson gson = new Gson();
-        FileReader fr = null;
-        File folder = new File(jsonDir);
-        File[] listOfFiles = folder.listFiles();
+        //Path pathToDir = Paths.get(jsonDir);//path to dir of Json files //original @see jsonDir field comment
+        Path pathToDir = Paths.get("jsonFiles");//path to dir of Json files
+        JsonFiles jsonFiles = new JsonFiles();//callback for files
+        Files.walkFileTree(pathToDir , jsonFiles);//walking path
+        ArrayList<Path> allJsonFilesInPath = JsonFiles.getPaths();//get all paths from JsonFiles
 
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].isFile()) {
-                System.out.println("File " + listOfFiles[i].getName());
-                try
-                {
-                    fr = new FileReader(jsonDir+listOfFiles[i].getName());
-                    Room room = gson.fromJson(fr, Room.class);
-                    roomList.add(room);
-                    System.out.println("Room " + "'" +room.getName()+ "'" + " imported successfully!");
-                }
-                catch (FileNotFoundException fe)
-                {
-                    System.out.println("File not found");
-                }finally {
-                    try {
-                        fr.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else if (listOfFiles[i].isDirectory()) {
-                System.out.println("Directory " + listOfFiles[i].getName());
-                //@TODO print error
+        for(Path pth: allJsonFilesInPath){
+            try(BufferedReader reader = Files.newBufferedReader(pth)) {
+                Room room = gson.fromJson(reader,Room.class);
+                roomList.add(room);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
         return "";

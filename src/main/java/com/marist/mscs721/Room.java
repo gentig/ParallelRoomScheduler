@@ -1,9 +1,13 @@
 package com.marist.mscs721;
 
-import java.util.ArrayList;
+import com.sun.javafx.beans.IDProperty;
 
-public class Room {	
-	
+import java.util.ArrayList;
+import java.util.UUID;
+
+public class Room {
+
+	private String ID;
 	private String name;
 	private int capacity;
 	private ArrayList<Meeting> meetings;
@@ -13,6 +17,7 @@ public class Room {
 		setName(newName);
 		setCapacity(newCapacity);
 		setMeetings(new ArrayList<Meeting>());
+		this.ID = UUID.randomUUID().toString();
 	}
 
 	public void addMeeting(Meeting newMeeting) {
@@ -47,5 +52,8 @@ public class Room {
 	public void setMeetings(ArrayList<Meeting> meetings) {
 		this.meetings = meetings;
 	}
-	
+
+	public String getID(){
+		return ID;
+	}
 }
