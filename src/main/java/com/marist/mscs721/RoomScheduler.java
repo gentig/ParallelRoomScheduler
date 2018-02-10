@@ -1,10 +1,13 @@
 package com.marist.mscs721;
 
+//Using Gson library for JSON
 import com.google.gson.Gson;
+//Log4j for debugging
 import org.apache.log4j.Logger;
-
 import java.io.*;
+//Using java8 nio for file manipulation
 import java.nio.file.*;
+
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,7 +16,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.stream.Stream;
 
 public class RoomScheduler {
     final static Logger logger = Logger.getLogger(RoomScheduler.class);
@@ -161,7 +163,7 @@ public class RoomScheduler {
                 //Passing bytes to the write fixes the problem with iterable argument we need here
                 Files.write(Paths.get("jsonfiles/" + roomName + ".json"), jsonString.getBytes());
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.trace("Cannot write to JSON file...",e);
             }
         }
 
