@@ -1,5 +1,5 @@
 /**
- * @author michael.gildein1@marist.edu
+ * @author gentjan.gjeci1@marist.edu
  *
  */
 package com.marist.mscs721;
