@@ -64,8 +64,8 @@ public class RoomScheduler {
      *
      * List the schedule for the room
      *
-     * @param: ArrayList roomList
-     * @return: String
+     * @param roomList a list of rooms
+     * @return String
      * */
 	protected static String listSchedule(ArrayList<Room> roomList) {
 		String roomName = getRoomName();
@@ -144,8 +144,9 @@ public class RoomScheduler {
      *
      * Export rooms to json
      *
-     * @param: roomList the list of rooms
+     * @param roomList a list of rooms
      * @return String
+     * @throws IOException cannot export json files
      */
 	protected static String exportRooms(ArrayList<Room> roomList) throws IOException{
         System.out.println("Export rooms");
@@ -178,6 +179,7 @@ public class RoomScheduler {
      *
      * @param roomList the list of rooms
      * @return String
+     * @throws IOException cannot import json file/s
      */
     protected static String importRooms(ArrayList<Room> roomList) throws IOException{
         Gson gson = new Gson();
@@ -201,9 +203,9 @@ public class RoomScheduler {
 	/**
      * removeRoom
      *
-     * Removing romm from the list
+     * Removing room from the list
      *
-     * @param roomList
+     * @param roomList a list of rooms
      * @return String
      */
 	protected static String removeRoom(ArrayList<Room> roomList) {
@@ -333,7 +335,7 @@ public class RoomScheduler {
      *
      * Get the date and check for error
      *
-     * @param input
+     * @param input time as string
      * @return String
      */
     protected static String getTime(String input){
@@ -354,10 +356,10 @@ public class RoomScheduler {
      *
      * Get the date and check for error
      *
-     * @param input
+     * @param input datetime formated as string
      * @return String
      *
-     * @// TODO: 1/30/2018 Dont need this for now
+     * @TODO 2/10/2018 Finish this
      */
     protected static String getTimeStamp(String input){
         try {
