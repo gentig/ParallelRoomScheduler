@@ -82,15 +82,21 @@ public class RoomScheduler {
      * @return String
      * */
 	protected static String listSchedule(ArrayList<Room> roomList) {
-		String roomName = getRoomName();
-		System.out.println(roomName + " Schedule");
-		System.out.println(DEVIDER);
-		
-		for (Meeting m : getRoomFromName(roomList, roomName).getMeetings()) {
-			System.out.println(m.toString());
-		}
-
-		return "";
+		String roomName = "";
+        if(!isListEmpty(roomList)) {
+		    roomName = getRoomName();
+            if(roomExists(roomName,roomList)) {
+                System.out.println(roomName + " Schedule");
+                System.out.println(DEVIDER);
+                for (Meeting m : getRoomFromName(roomList, roomName).getMeetings()) {
+			        System.out.println(m.toString());
+		        }
+            }
+            logger.error("No rooms with the name " + roomName + " found");
+            return "Error";
+        }
+        logger.error("List of rooms is empty, no schedules available");
+        return "Error";
 	}
 
 	/**
