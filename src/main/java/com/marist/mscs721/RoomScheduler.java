@@ -4,6 +4,8 @@ package com.marist.mscs721;
 import com.google.gson.Gson;
 //Log4j for debugging
 import org.apache.log4j.Logger;
+
+import javax.annotation.Nonnull;
 import java.io.*;
 //Using java8 nio for file manipulation
 import java.nio.file.*;
@@ -15,19 +17,31 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Scanner;
 
 public class RoomScheduler {
     final static Logger logger = Logger.getLogger(RoomScheduler.class);
-	protected static Scanner keyboard = new Scanner(System.in);
+	private static Scanner keyboard = new Scanner(System.in);
 	//jsonDir is a path outside the project. Not used for now. I might use it later
     //private static String jsonDir = System.getProperty("user.home").replace("\\","/") + "/GG_HOME_FOLDER/marist/Spring_2018/mscs721/homework/hw_1/json_files/";
     public static final String DEVIDER = "---------------------";
+    //Compare two timestams
+    public static CompareTimestamp compare;
 
+    /**
+     * main
+     *
+     *Initialize program
+     * @param args command line arguments
+     * @throws IOException throws exception from functions
+     */
 	public static void main(String[] args) throws IOException {
 		Boolean end = false;
 		ArrayList<Room> rooms = new ArrayList<>();
-        logger.info("This is the logger in action");
+		//logger.info("Importing rooms if they are available. We can use JSON files to persist the data" +
+        //        "so we import any available rooms first.");
         while (!end) {
             switch (mainMenu()) {
                 case 1:
@@ -87,36 +101,38 @@ public class RoomScheduler {
 	 * @return int
 	 */
 	protected static int mainMenu() {
-		System.out.println("Main Menu:");
-		System.out.println("  1 - Add a room");
-		System.out.println("  2 - Remove a room");
-		System.out.println("  3 - Schedule a room");
-		System.out.println("  4 - List Schedule");
-		System.out.println("  5 - List Rooms");
+        System.out.println("Main Menu:");
+        System.out.println("  1 - Add a room");
+        System.out.println("  2 - Remove a room");
+        System.out.println("  3 - Schedule a room");
+        System.out.println("  4 - List Schedule");
+        System.out.println("  5 - List Rooms");
         System.out.println("  6 - Export Rooms");
         System.out.println("  7 - Import Rooms");
-		System.out.println("Enter your selection: ");
-
+        System.out.println("Enter your selection: ");
 		/**
 		 * Make sure we have an int
 		 * Display the menu until we get an integer
 		 * Let the user know that they need to input an int
 		 * Display the menu again
 		 */
-		while(!keyboard.hasNextInt()){
-			System.out.println("Error: Make sure you enter an integer.");
-			System.out.println("Main Menu:");
-			System.out.println("  1 - Add a room");
-			System.out.println("  2 - Remove a room");
-			System.out.println("  3 - Schedule a room");
-			System.out.println("  4 - List Schedule");
-			System.out.println("  5 - List Rooms");
-            System.out.println("  6 - Export Rooms");
-            System.out.println("  7 - Import Rooms");
-			System.out.println("Enter your selection: ");
-			keyboard.next();
+		while(keyboard.hasNext()){
+		    if(keyboard.hasNextInt()) {
+                return keyboard.nextInt();
+            } else{
+                System.out.println("Main Menu:");
+                System.out.println("  1 - Add a room");
+                System.out.println("  2 - Remove a room");
+                System.out.println("  3 - Schedule a room");
+                System.out.println("  4 - List Schedule");
+                System.out.println("  5 - List Rooms");
+                System.out.println("  6 - Export Rooms");
+                System.out.println("  7 - Import Rooms");
+                System.out.println("Enter your selection: ");
+                keyboard.next();
+            }
 		}
-		return keyboard.nextInt();
+		return 0;
 	}
 
 	/**
@@ -128,47 +144,73 @@ public class RoomScheduler {
      * @return String
      */
 	protected static String addRoom(ArrayList<Room> roomList) {
+	    int capacity = 0;
 		System.out.println("Add a room:");
 		String name = getRoomName();
 		System.out.println("Room capacity?");
-		int capacity = keyboard.nextInt();
-
+		if(keyboard.hasNextInt()){
+		    capacity = keyboard.nextInt();
+		    /**
+             * Avoid negative capacity
+             * @TODO: 2/24/2018 Fix magic numbers like 0
+             */
+            if(capacity <= 0){
+                logger.error("Capacity should be bigger than zero");
+                return "Error";
+            }
+        }else {
+            logger.error("Error: Integer cannot be larger than " + Integer.MAX_VALUE);
+            keyboard.next();//consume
+            return "Error";
+        }
+        //If room exists delete it and update it with the new one
+        if(roomExists(name,roomList)){
+		    logger.error("Room " + name + " already exists. An update will be performed");
+		    /**
+             * @TODO: 2/24/2018  Ask user if they want to perform this step
+             *
+             * NOTE: This removes the room silently
+             */
+		    roomList.remove(findRoomIndex(roomList,name));
+        }
 		Room newRoom = new Room(name, capacity);
 		roomList.add(newRoom);
-
 		return "Room '" + newRoom.getName() + "' added successfully!";
 	}
 
 	/**
      * exportRooms
      *
-     * Export rooms to json
+     * Export rooms to json. Files.write operation uses StandartOpenOption CREATE, TRUNCATE_EXISTING
+     * So the existing file will be replace with the new file
      *
      * @param roomList a list of rooms
      * @return String
      * @throws IOException cannot export json files
      */
 	protected static String exportRooms(ArrayList<Room> roomList) throws IOException{
-        System.out.println("Export rooms");
-        System.out.println(DEVIDER);
-        Gson gs = new Gson();
-        ArrayList<String> list = new ArrayList<>();
-        String jsonRoom, roomName = "";
-        for (Room room : roomList) {
-            jsonRoom = gs.toJson(room,Room.class);
-            list.add(jsonRoom);
-        }
-        for (String jsonString: list) {
-            roomName = gs.fromJson(jsonString, Room.class).getName();
-            try {
-                //Passing bytes to the write fixes the problem with iterable argument we need here
-                Files.write(Paths.get("jsonfiles/" + roomName + ".json"), jsonString.getBytes());
-            } catch (IOException e) {
-                logger.trace("Cannot write to JSON file...",e);
+	    if(!isListEmpty(roomList)) {
+            System.out.println(DEVIDER);
+            Gson gs = new Gson();
+            ArrayList<String> list = new ArrayList<>();
+            String jsonRoom, roomName = "";
+            for (Room room : roomList) {
+                jsonRoom = gs.toJson(room, Room.class);
+                list.add(jsonRoom);
             }
+            for (String jsonString : list) {
+                roomName = gs.fromJson(jsonString, Room.class).getName();
+                try {
+                    //Passing bytes to the Files.write fixes the problem with iterable argument that we need here
+                    Files.write(Paths.get("jsonfiles/" + roomName + ".json"), jsonString.getBytes());
+                } catch (IOException e) {
+                    logger.trace("Cannot write to JSON file...", e);
+                }
+            }
+            System.out.println(DEVIDER);
+            return "";
         }
-
-        System.out.println(DEVIDER);
+        logger.error("No rooms to export.");
 	    return "";
     }
 
@@ -184,19 +226,28 @@ public class RoomScheduler {
     protected static String importRooms(ArrayList<Room> roomList) throws IOException{
         Gson gson = new Gson();
         //Path pathToDir = Paths.get(jsonDir);//path to dir of Json files //original @see jsonDir field comment
-        Path pathToDir = Paths.get("jsonFiles");//path to dir of Json files
-        JsonFiles jsonFiles = new JsonFiles();//callback for files
-        Files.walkFileTree(pathToDir , jsonFiles);//walking path
-        ArrayList<Path> allJsonFilesInPath = JsonFiles.getPaths();//get all paths from JsonFiles
-
-        for(Path pth: allJsonFilesInPath){
-            try(BufferedReader reader = Files.newBufferedReader(pth)) {
-                Room room = gson.fromJson(reader,Room.class);
-                roomList.add(room);
-            } catch (IOException e) {
-                e.printStackTrace();
+        Path pathToDir = Paths.get("jsonFiles");//"jsonFiles" is directory of all Json files
+        JsonFiles jsonFiles = new JsonFiles();//callback object for walking directories and files
+        Files.walkFileTree(pathToDir , jsonFiles);
+        List<Path> allJsonFilesInPath = JsonFiles.getPaths();//get all paths from JsonFiles
+        //check if we have rooms to import
+        if(!isListEmpty(allJsonFilesInPath)) {
+            for (Path pth : allJsonFilesInPath) {
+                try (BufferedReader reader = Files.newBufferedReader(pth)) {
+                    Room room = gson.fromJson(reader, Room.class);
+                    if(roomExists(room.getName(),roomList)){
+                        logger.error("Room " + room.getName() + " already exists. An update will be performed");
+                        //Delete existing, to be replaced by the import
+                        roomList.remove(findRoomIndex(roomList,room.getName()));
+                    }
+                    roomList.add(room);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+            return "";
         }
+        logger.error("No rooms were imported. Missing import files");
         return "";
     }
 
@@ -209,10 +260,19 @@ public class RoomScheduler {
      * @return String
      */
 	protected static String removeRoom(ArrayList<Room> roomList) {
-		System.out.println("Remove a room:");
-		roomList.remove(findRoomIndex(roomList, getRoomName()));
-
-		return "Room removed successfully!";
+	    String roomName = "";
+	    if(!isListEmpty(roomList)) {
+            System.out.println("Remove a room:");
+            roomName = getRoomName();
+            if(roomExists(roomName,roomList)) {
+                roomList.remove(findRoomIndex(roomList, roomName));
+                return "Room removed successfully!";
+            }
+            logger.error("No rooms with the name " + roomName + " found");
+            return "Error";
+        }
+        logger.error("List of rooms is empty, no rooms to remove");
+        return "Error";
 	}
 
 	/**
@@ -221,7 +281,7 @@ public class RoomScheduler {
      * @param roomList the list of rooms
      * @return String
      */
-	protected static String listRooms(ArrayList<Room> roomList) {
+	private static String listRooms(ArrayList<Room> roomList) {
 		System.out.println("Room Name - Capacity");
 		System.out.println(DEVIDER);
 		for (Room room : roomList) {
@@ -241,72 +301,164 @@ public class RoomScheduler {
      * @param roomList the list of rooms
      * @return String
      **/
-	protected static String scheduleRoom(ArrayList<Room> roomList) {
-		System.out.println("Schedule a room:");
-		String name = getRoomName();
-		//Start Date
-		System.out.println("Start Date? (yyyy-mm-dd):");
-		String startDate = keyboard.next();
-		String dateString = getDate(startDate);
-		//Start Time
-		System.out.println("Start Time? (HH:mm)");
-		String startTime = keyboard.next();
-		//startTime = startTime + ":00"; //Don't need this when using time library
-		String timeString = getTime(startTime);
+	private static String scheduleRoom(ArrayList<Room> roomList) {
+        //Compare interface for comparing timestamps
+        compare = (start,end)-> start.after(end);
+        String subject = "";
+        if(!isListEmpty(roomList)) {
+            System.out.println("Schedule a room:");
+            //Check if room exists
+            String name = getRoomName();
+            if(!roomExists(name,roomList)){
+                logger.error("Room " + name + " does not exists");
+                return "Error";
+            }
+            //Start Date
+            System.out.println("Start Date? (yyyy-mm-dd):");
+            String startDate = keyboard.next();
+            String dateString = getDate(startDate);
+            //Check if date is correct
+            if(0 == dateString.compareTo("false")){
+                return "Error";
+            }
+            //Start Time
+            System.out.println("Start Time? (HH:mm)");
+            String startTime = keyboard.next();
+            String timeString = getTime(startTime);
+            //Check if time is correct
+            if(0 == timeString.compareTo("false")){
+                return "Error";
+            }
+            //End Date
+            System.out.println("End Date? (yyyy-mm-dd):");
+            String endDate = keyboard.next();
+            String dateStringEnd = getDate(endDate);
+            if(0 == dateStringEnd.compareTo("false")){
+                return "Error";
+            }
+            //End Time
+            System.out.println("End Time? (HH:mm)");
+            String endTime = keyboard.next();
+            String timeStringEnd = getTime(endTime);
+            if(0 == timeStringEnd.compareTo("false")){
+                return "Error";
+            }
+            //Current meeting timestamps
+            Timestamp startTimestamp = Timestamp.valueOf(dateString + " " + timeString + ":00");//we need seconds for timestamp
+            Timestamp endTimestamp = Timestamp.valueOf(dateStringEnd + " " + timeStringEnd + ":00");//we need seconds for timestamp
 
-		//End Data
-		System.out.println("End Date? (yyyy-mm-dd):");
-		String endDate = keyboard.next();
-        String dateStringEnd = getDate(endDate);
-		//End Time
-		System.out.println("End Time? (HH:mm)");
-		String endTime = keyboard.next();
-		//endTime = endTime + ":00.0";
-        String timeStringEnd = getTime(endTime);
+            //Adding subject
+            System.out.println("Subject?");
+            keyboard.nextLine();//consume "\n" left from previous next or nextInt
+            if(keyboard.hasNextLine()) {
+                //subject = keyboard.nextLine();//There is a problem here cannot get scanner for subject, fix it
+                subject = keyboard.nextLine();
+                if(subject.length() > 200){
+                    logger.error("No more than 200 characters for the subject allowed");
+                    return "Error";
+                }
+            }
+            Room curRoom = getRoomFromName(roomList, name);
+            //Get all already set meetings
+            //@// TODO: 1/30/2018 Check for time conflict with current meeting to be added
+            ArrayList<Meeting> me = curRoom.getMeetings();
+            //Check if time is in the past
+            if(timeInThePast(startTimestamp,endTimestamp)){
+                logger.error("Time in the past");
+                return "Error";
+            }
+            if(!me.isEmpty()){
+                String answer = checkMeetingConflict(me,startTimestamp,endTimestamp);
+                return "Error " + answer;
+            }
+            Meeting meeting = new Meeting(startTimestamp, endTimestamp, subject);
+            curRoom.addMeeting(meeting);
+            return "Successfully scheduled meeting!";
+	    }
+	    logger.error("Cannot schedule meeting. No rooms available");
+	    return "";
+	}
 
-        //Current meeting timestamps
-		Timestamp startTimestamp = Timestamp.valueOf(dateString + " " + timeString + ":00");
-		Timestamp endTimestamp = Timestamp.valueOf(dateStringEnd + " " + timeStringEnd + ":00");
+	/**
+     * roomExists
+     *
+     * @param name name of the room
+     * @param roomList list of rooms to search
+     * @return boolean
+     */
+    private static boolean roomExists(String name,ArrayList<Room> roomList) {
+        for (Room rm : roomList) {
+            if( 0 == name.compareTo(rm.getName())){
+                return true;
+            }
+        }
+        return false;
+    }
 
-		System.out.println("Subject?");
-		String subject = keyboard.nextLine();//There is a problem here
-		Room curRoom = getRoomFromName(roomList, name);
-		//Get all already set meetings
-        //@// TODO: 1/30/2018 Check for time conflict with current meeting to be added
-		ArrayList<Meeting> me = curRoom.getMeetings();
-		if (me.isEmpty()){
-            if(endTimestamp.before(startTimestamp)){
+    /**
+     * timeInThePast
+     *
+     * @param start start timestamp
+     * @param end end timestamp
+     *
+     * @return boolean true if time in the past, false otherwise
+     */
+	private static Boolean timeInThePast(Timestamp start, Timestamp end){
+	    //set the interface
+	    compare = (first,second)-> first.after(second);
+        //Check start time is not in the past
+        if(!compare.compare(start,new Timestamp(System.currentTimeMillis()))){
+            logger.error("Start time cannot be in the past");
+            return true;
+        }
+        //Check end time is not in the past
+        if(!compare.compare(end,new Timestamp(System.currentTimeMillis()))){
+            logger.error("End time cannot be in the past");
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * checkMeetingConflict
+     *
+     * Check if there is a conflict with before adding a meeting
+     *
+     * @param meetings a list of meetings for a room
+     * @param startTimestamp start time of the meeting
+     * @param endTimestamp end time of the meeting
+     * @return String
+     */
+    private static String checkMeetingConflict(ArrayList<Meeting> me, Timestamp startTimestamp, Timestamp endTimestamp){
+        String answer = "";
+        for (Meeting mt : me) {
+                //System.out.println("StartMeeting: " + meetingStart.getTime() + " EndMeeting: " + meetingEnd.getTime());
+            if (endTimestamp.before(startTimestamp)) {
                 //error
                 System.out.println("Stop time cannot be before start time");
-                return "Error: Time conflict!";
-            }
-        }
-        for (Meeting mt : me) {
-            //System.out.println("StartMeeting: " + meetingStart.getTime() + " EndMeeting: " + meetingEnd.getTime());
-            if(endTimestamp.before(startTimestamp)){
-              //error
-                System.out.println("Stop time cannot be before start time");
-                return "Error: Time conflict!";
-            }else if(startTimestamp.after(mt.getStartTime()) && startTimestamp.before(mt.getStopTime())){
-              //conflict
+                answer = "conflict";
+                break;
+            } else if (startTimestamp.after(mt.getStartTime()) && startTimestamp.before(mt.getStopTime())) {
+                //conflict
                 System.out.println("Start time is in the middle of existing");
-                return "Error: Time conflict!";
-            }else if(endTimestamp.after(mt.getStartTime()) && endTimestamp.before(mt.getStopTime())){
-              //conflict
+                answer="conflict";
+                break;
+            } else if (endTimestamp.after(mt.getStartTime()) && endTimestamp.before(mt.getStopTime())) {
+                //conflict
                 System.out.println("End time is in the middle of existing");
-                return "Error: Time conflict!";
-            }else if(startTimestamp.before(mt.getStartTime()) && endTimestamp.after(mt.getStopTime())){
-              //conflict
+                answer="conflict";
+            } else if (startTimestamp.before(mt.getStartTime()) && endTimestamp.after(mt.getStopTime())) {
+                //conflict
                 System.out.println("Start time is good but End time is bigger than existing stop time");
-                return "Error: Time conflict!";
+                answer="conflict";
+            }else{
+                System.out.println("Unknown error");
+                answer= "unknown";
+                break;
             }
         }
-
-		Meeting meeting = new Meeting(startTimestamp, endTimestamp, subject);
-		curRoom.addMeeting(meeting);
-
-		return "Successfully scheduled meeting!";
-	}
+        return answer;
+    }
 
 	/**
      * getDate
@@ -320,20 +472,18 @@ public class RoomScheduler {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             LocalDate date = LocalDate.parse(input, formatter);
-            System.out.println(date.toString());
-            return date.toString();
+            return date.format(formatter);
         }
         catch (DateTimeParseException exc) {
-            System.out.println("String " + input + " is not parsable!");
+            logger.error("String " + input + " is not parsable!" + exc);
             return "false";
-            //throw exc;      // Rethrow the exception.
         }
     }
 
     /**
-     * getDate
+     * getTime
      *
-     * Get the date and check for error
+     * Get the time and check for error
      *
      * @param input time as string
      * @return String
@@ -345,37 +495,31 @@ public class RoomScheduler {
             return time.toString();
         }
         catch (DateTimeParseException exc) {
-            System.out.println("String " + input + " is not parsable!");
+            logger.error("String " + input + " is not parsable!" + exc);
             return "false";
-            //throw exc;      // Rethrow the exception.
         }
     }
 
     /**
-     * getDate
+     * getTimeStamp
      *
-     * Get the date and check for error
+     * Get the timeStamp and check for error
      *
      * @param input datetime formated as string
      * @return String
      *
-     * @TODO 2/10/2018 Finish this
+     * @TODO 2/18/2018 Finish this
      */
     protected static String getTimeStamp(String input){
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             LocalDateTime date = LocalDateTime.parse(input, formatter);
-            System.out.println(date.toString());
-
             Timestamp ts = Timestamp.valueOf(date);
-            System.out.println(ts.getTime());
-
             return ts.toString();
         }
         catch (DateTimeParseException exc) {
-            System.out.println("String " + input + " is not parsable!");
+            logger.error("String " + input + " is not parsable!");
             return "false";
-            //throw exc;      // Rethrow the exception.
         }
     }
 
@@ -410,7 +554,6 @@ public class RoomScheduler {
 			}
 			roomIndex++;
 		}
-
 		return roomIndex;
 	}
 
@@ -426,4 +569,21 @@ public class RoomScheduler {
 		return keyboard.next();
 	}
 
+	/**
+     * checkForRoom
+     *
+     * This function checks if there is at least one room
+     * in a list of rooms
+     *
+     * @param roomList A list of Rooms
+     *
+     * @return boolean true or false
+     */
+    private static Boolean isListEmpty(List list){
+        if (list.isEmpty()){
+            logger.info("List is empty");
+            return true;
+        }
+        return false;
+    }
 }
