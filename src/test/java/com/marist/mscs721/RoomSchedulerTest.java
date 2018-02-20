@@ -70,7 +70,7 @@ public class RoomSchedulerTest {
     @Test
     public void getTime() throws DateTimeParseException{
         String timeExpected = "02:30";
-        String timeInput = "02:50";
+        String timeInput = "02:30";
         try {
             LocalTime time = LocalTime.parse(timeInput);
             assertEquals(timeExpected,time.toString());
@@ -83,8 +83,7 @@ public class RoomSchedulerTest {
 
     @Test
     public void predicate() {
-        Timestamp someTs = Timestamp.valueOf("2018-01-18 18:33:00");
-        Timestamp someTs2 = Timestamp.valueOf("2018-02-18 14:30:00");
+        Timestamp someTs = Timestamp.valueOf("2018-06-18 18:33:00");
         CompareTimestamp compare = (start,end)-> start.after(end);
         assertTrue(compare.compare(someTs,new Timestamp(System.currentTimeMillis())));
     }

@@ -4,8 +4,6 @@ package com.marist.mscs721;
 import com.google.gson.Gson;
 //Log4j for debugging
 import org.apache.log4j.Logger;
-
-import javax.annotation.Nonnull;
 import java.io.*;
 //Using java8 nio for file manipulation
 import java.nio.file.*;
@@ -17,21 +15,19 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
 public class RoomScheduler {
-    final static Logger logger = Logger.getLogger(RoomScheduler.class);
+    static final Logger logger = Logger.getLogger(RoomScheduler.class);
 	private static Scanner keyboard = new Scanner(System.in);
 	private static final int MINIMUM_ROOM_CAPACITY = 1;
 	private static final int SAME_STRING = 0;
 	private static final int MAX_SUBJECT_LENGTH = 200;
 	//jsonDir is a path outside the project. Not used for now. I might use it later
-    //private static String jsonDir = System.getProperty("user.home").replace("\\","/") + "/GG_HOME_FOLDER/marist/Spring_2018/mscs721/homework/hw_1/json_files/";
-    public static final String DEVIDER = "---------------------";
+    private static final String DEVIDER = "---------------------";
     //Compare two timestams
-    public static CompareTimestamp compare;
+    private static CompareTimestamp compare;
 
     /**
      * main
@@ -247,7 +243,7 @@ public class RoomScheduler {
                     }
                     roomList.add(room);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("Error " + e);
                 }
             }
             return "Error";
