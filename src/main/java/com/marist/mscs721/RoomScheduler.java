@@ -24,6 +24,9 @@ import java.util.Scanner;
 public class RoomScheduler {
     final static Logger logger = Logger.getLogger(RoomScheduler.class);
 	private static Scanner keyboard = new Scanner(System.in);
+	private static final int MINIMUM_ROOM_CAPACITY = 1;
+	private static final int SAME_STRING = 0;
+	private static final int MAX_SUBJECT_LENGTH = 200;
 	//jsonDir is a path outside the project. Not used for now. I might use it later
     //private static String jsonDir = System.getProperty("user.home").replace("\\","/") + "/GG_HOME_FOLDER/marist/Spring_2018/mscs721/homework/hw_1/json_files/";
     public static final String DEVIDER = "---------------------";
@@ -150,18 +153,14 @@ public class RoomScheduler {
      * @return String
      */
 	protected static String addRoom(ArrayList<Room> roomList) {
-	    int capacity = 0;
-		System.out.println("Add a room:");
+        System.out.println("Add a room:");
 		String name = getRoomName();
 		System.out.println("Room capacity?");
-		if(keyboard.hasNextInt()){
+        int capacity = 0;
+        if(keyboard.hasNextInt()){
 		    capacity = keyboard.nextInt();
-		    /**
-             * Avoid negative capacity
-             * @TODO: 2/24/2018 Fix magic numbers like 0
-             */
-            if(capacity <= 0){
-                logger.error("Capacity should be bigger than zero");
+            if(capacity < MINIMUM_ROOM_CAPACITY){
+                logger.error("Capacity should be a positive integer bigger than zero");
                 return "Error";
             }
         }else {
@@ -243,7 +242,7 @@ public class RoomScheduler {
                     Room room = gson.fromJson(reader, Room.class);
                     if(roomExists(room.getName(),roomList)){
                         logger.error("Room " + room.getName() + " already exists. An update will be performed");
-                        //Delete existing, to be replaced by the import
+                        //Delete existing room, to be replaced by the import
                         roomList.remove(findRoomIndex(roomList,room.getName()));
                     }
                     roomList.add(room);
@@ -251,7 +250,7 @@ public class RoomScheduler {
                     e.printStackTrace();
                 }
             }
-            return "";
+            return "Error";
         }
         logger.error("No rooms were imported. Missing import files");
         return "";
@@ -324,7 +323,7 @@ public class RoomScheduler {
             String startDate = keyboard.next();
             String dateString = getDate(startDate);
             //Check if date is correct
-            if(0 == dateString.compareTo("false")){
+            if(SAME_STRING == dateString.compareTo("false")){
                 return "Error";
             }
             //Start Time
@@ -332,21 +331,21 @@ public class RoomScheduler {
             String startTime = keyboard.next();
             String timeString = getTime(startTime);
             //Check if time is correct
-            if(0 == timeString.compareTo("false")){
+            if(SAME_STRING == timeString.compareTo("false")){
                 return "Error";
             }
             //End Date
             System.out.println("End Date? (yyyy-mm-dd):");
             String endDate = keyboard.next();
             String dateStringEnd = getDate(endDate);
-            if(0 == dateStringEnd.compareTo("false")){
+            if(SAME_STRING == dateStringEnd.compareTo("false")){
                 return "Error";
             }
             //End Time
             System.out.println("End Time? (HH:mm)");
             String endTime = keyboard.next();
             String timeStringEnd = getTime(endTime);
-            if(0 == timeStringEnd.compareTo("false")){
+            if(SAME_STRING == timeStringEnd.compareTo("false")){
                 return "Error";
             }
             //Current meeting timestamps
@@ -359,7 +358,7 @@ public class RoomScheduler {
             if(keyboard.hasNextLine()) {
                 //subject = keyboard.nextLine();//There is a problem here cannot get scanner for subject, fix it
                 subject = keyboard.nextLine();
-                if(subject.length() > 200){
+                if(subject.length() > MAX_SUBJECT_LENGTH){
                     logger.error("No more than 200 characters for the subject allowed");
                     return "Error";
                 }
@@ -394,7 +393,7 @@ public class RoomScheduler {
      */
     private static boolean roomExists(String name,ArrayList<Room> roomList) {
         for (Room rm : roomList) {
-            if( 0 == name.compareTo(rm.getName())){
+            if( SAME_STRING == name.compareTo(rm.getName())){
                 return true;
             }
         }
@@ -555,7 +554,7 @@ public class RoomScheduler {
 		int roomIndex = 0;
 
 		for (Room room : roomList) {
-			if (room.getName().compareTo(roomName) == 0) {
+			if (room.getName().compareTo(roomName) == SAME_STRING) {
 				break;
 			}
 			roomIndex++;
