@@ -202,10 +202,14 @@ public class RoomScheduler {
             for (String jsonString : list) {
                 roomName = gs.fromJson(jsonString, Room.class).getName();
                 try {
+                    if(Files.notExists(Paths.get("jsonfiles"))){
+                        Path dirPath = Files.createDirectories(Paths.get("jsonfiles"));
+                        logger.info("Directory " + dirPath.toString() +" created");
+                    }
                     //Passing bytes to the Files.write fixes the problem with iterable argument that we need here
                     Files.write(Paths.get("jsonfiles/" + roomName + ".json"), jsonString.getBytes());
                 } catch (IOException e) {
-                    logger.trace("Cannot write to JSON file...", e);
+                    logger.error("Cannot write to JSON file...", e);
                 }
             }
             System.out.println(DEVIDER);
