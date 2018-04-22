@@ -19,7 +19,7 @@ public class RoomTest {
             int intCapacity = Integer.parseInt(roomCapacity);
             //If no error see if we have an positive int value
             if(intCapacity > 0){
-                Room rm = new Room(roomName,intCapacity);
+                Room rm = new Room(roomName,intCapacity,"","");
                 assertTrue(true);
             }else{
                 Assert.fail("Capacity less than one");

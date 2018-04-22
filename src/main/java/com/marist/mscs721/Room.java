@@ -12,14 +12,18 @@ public class Room {
 	private String ID;
 	private String name;
 	private int capacity;
+	private String building;
+	private String location;
 	private ArrayList<Meeting> meetings;
 	
 	/**
      * Constructor
      */
-	public Room(String newName, int newCapacity) {
+	public Room(String newName, int newCapacity, String building, String location) {
 		setName(newName);
 		setCapacity(newCapacity);
+		setBuilding(building);
+		setLocation(location);
 		setMeetings(new ArrayList<Meeting>());
 		this.ID = UUID.randomUUID().toString();
 	}
@@ -112,4 +116,44 @@ public class Room {
 	public String getID(){
 		return ID;
 	}
+
+	/**
+     * setBuildings
+     *
+     * Set building for a room
+     * @param string building
+     *
+     */
+	public void setBuilding(String building){
+	       this.building = building;
+    }
+
+    /**
+     * getBuildings
+     *
+     * Get building for a room
+     */
+	public String getBuilding(){
+	       return building;
+    }
+
+    /**
+     * setBuildings
+     *
+     * Set building for a room
+     * @param string building
+     *
+     */
+	public void setLocation(String location){
+	       this.location = location;
+    }
+
+    /**
+     * getLocation
+     *
+     * Get location for a room
+     */
+	public String getLocation(){
+	       return location;
+    }
 }
