@@ -19,6 +19,8 @@ import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
+import static javafx.application.Platform.exit;
+
 public class RoomScheduler {
     static final Logger logger = Logger.getLogger(RoomScheduler.class);
 	private static Scanner keyboard = new Scanner(System.in);
@@ -200,26 +202,28 @@ public class RoomScheduler {
 		 * Display the menu again
 		 */
 		int value = -1;
-		while(value < 0){
-		    try{
-                System.out.println("Main Menu:");
-                System.out.println("  1 - Add a room");
-                System.out.println("  2 - Remove a room");
-                System.out.println("  3 - Schedule a room");
-                System.out.println("  4 - List Schedule");
-                System.out.println("  5 - List Rooms");
-                System.out.println("  6 - Export Rooms");
-                System.out.println("  7 - Import Rooms");
-                System.out.println("  8 - Find Available Room  ");
-                System.out.println("Enter your selection: ");
+        while(value < 0){
+            System.out.println("Main Menu:");
+            System.out.println("  1 - Add a room");
+            System.out.println("  2 - Remove a room");
+            System.out.println("  3 - Schedule a room");
+            System.out.println("  4 - List Schedule");
+            System.out.println("  5 - List Rooms");
+            System.out.println("  6 - Export Rooms");
+            System.out.println("  7 - Import Rooms");
+            System.out.println("  8 - Find Available Room  ");
+            System.out.println("Enter your selection: ");
+            if(keyboard.hasNextInt()) {
                 value = keyboard.nextInt();
-                keyboard.nextLine();//consume new line
-            }catch (InputMismatchException e){
-		        logger.error("Not an int");
-		        keyboard.nextLine();
+                keyboard.nextLine();
+                break;
+            }else
+            {
+                logger.error("Commands executed. System will exit!");
+                System.exit(0);
             }
-		}
-		return value;
+        }
+		return value;//return what ever the value
 	}
 
 	/**
@@ -274,6 +278,7 @@ public class RoomScheduler {
             String jsonRoom, roomName = "";
             for (Room room : roomList) {
                 jsonRoom = gs.toJson(room, Room.class);
+                //logger.info("Room to be added: "+jsonRoom);
                 list.add(jsonRoom);
             }
             for (String jsonString : list) {
@@ -285,12 +290,12 @@ public class RoomScheduler {
                     }
                     //Passing bytes to the Files.write fixes the problem with iterable argument that we need here
                     Files.write(Paths.get("jsonfiles/" + roomName + ".json"), jsonString.getBytes());
-                    logger.info("Rooms exported successfully");
-                    return "";
                 } catch (IOException e) {
                     logger.error("Cannot write to JSON file...", e);
+                    return "Error";
                 }
             }
+            logger.info("Rooms exported successfully");
             return "";
         }
         logger.error("No rooms to export.");

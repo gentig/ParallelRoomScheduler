@@ -31,9 +31,9 @@ public class RoomSchedulerTest {
     public void findRoomByDate()
     {
         //Desired date and time to schedule a room
-        String dateThatWorksStart = "2018-04-22";
+        String dateThatWorksStart = "2018-10-27";
         String timeThatWorksStart = "08:00";
-        String dateThatWorksEnd = "2018-04-22";
+        String dateThatWorksEnd = "2018-10-27";
         String timeThatWorksEnd = "18:00";
         Timestamp TSDateThatWorksStart;
         Timestamp TSDateThatWorksEnd;
@@ -87,30 +87,29 @@ public class RoomSchedulerTest {
                //System.out.println(me.toString());
                if (TSDateThatWorksStart.after(me.getStartTime()) && TSDateThatWorksStart.before(me.getStopTime())) {
                    //System.out.println("Cannot Book, Time is in between schedule");
-                   logger.error("Cannot Book, Time is in between schedule");
+                   //logger.error("Cannot Book, Time is in between schedule");
                    errorCounter++;
                }else if(me.getStartTime().after(TSDateThatWorksStart) && me.getStartTime().before(TSDateThatWorksEnd)){
                    //System.out.println("Cannot book, Time Conflict");
-                   logger.error("Cannot book, Time Conflict");
+                   //logger.error("Cannot book, Time Conflict");
                    errorCounter++;
                }else if(TSDateThatWorksStart.equals(me.getStartTime()) || TSDateThatWorksEnd.equals(me.getStopTime())){
-                   logger.error("Start or End time same as the schedule");
+                   //logger.error("Start or End time same as the schedule");
                    errorCounter++;
                }
            }
        }
        if(errorCounter > 0){
-           logger.error("Room cannot be booked for the given date");
+           //logger.error("Room cannot be booked for the given date");
        }else{
-           logger.info("Room can be scheduled for the given date");
+           //logger.info("Room can be scheduled for the given date");
        }
-       System.out.println("Room booking schedule");
-       for (Meeting sm : m){
-           System.out.println(sm.toString());
-       }
-       //Expect to fail
-       Assert.assertEquals("false", correctDateThatWorksStart);
-       Assert.assertEquals("false", correctTimeThatWorksStart);
+       //System.out.println("Room booking schedule");
+       //for (Meeting sm : m){
+           //System.out.println(sm.toString());
+       //}
+       //Expect to fail if expected is 1
+       Assert.assertEquals(0, errorCounter);
     }
 
     /**
