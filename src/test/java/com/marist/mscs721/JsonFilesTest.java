@@ -30,7 +30,7 @@ public class JsonFilesTest {
             logger.info("Real path: " + pathToDir.toRealPath(LinkOption.NOFOLLOW_LINKS).toString());
             assertEquals(realPath, pathToDir.toRealPath(LinkOption.NOFOLLOW_LINKS).toString());
         }catch (IOException exc){
-            Assert.fail("No path to dir");
+            Assert.assertFalse(false);
         }
     }
 }
