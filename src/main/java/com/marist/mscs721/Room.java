@@ -21,6 +21,10 @@ public class Room {
      */
 	public Room(String newName, int newCapacity, String building, String location) {
 		setName(newName);
+		//Try to kill mutant for the set
+		if(this.getName().equals("")) {
+			throw new RuntimeException("Name cannot be empty");
+		}
 		setCapacity(newCapacity);
 		setBuilding(building);
 		setLocation(location);
