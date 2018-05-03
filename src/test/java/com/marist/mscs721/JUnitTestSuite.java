@@ -1,3 +1,8 @@
+/**
+ * Yet Another Software License, 1.0
+ *
+ * Lots of text, specifying the users rights, and whatever ...
+ */
 package com.marist.mscs721;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
