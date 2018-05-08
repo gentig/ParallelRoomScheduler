@@ -5,6 +5,7 @@
  */
 package com.marist.mscs721;
 
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 
 /**
@@ -15,6 +16,10 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -23,10 +28,334 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class RoomSchedulerTest {
     static final Logger logger = Logger.getLogger(RoomScheduler.class);
+    public static long [] array = new long[100000000];//a million values
+    public static List<Long> saveVal = new ArrayList<>();
 
+    @Test
+    public void importRooms() throws IOException {
+        Path pathToDir = Paths.get("jsonFiles");//"jsonFiles" is directory of all Json files
+        JsonFiles jsonFiles = new JsonFiles();//callback object for walking directories and files
+        Files.walkFileTree(pathToDir , jsonFiles);
+        List<Path> allJsonFilesInPath = JsonFiles.getPaths();//get all paths from JsonFiles
+        logger.info("List length is: " + allJsonFilesInPath.size());
+
+        List<List<Path>> subSets = Lists.partition(allJsonFilesInPath, 3);//list size of each subset
+        long count = subSets.stream().count();//count the number lists in the subsets
+        Integer i = (int) (long) count;//danger of overflow, long is bigger than int
+        logger.info("Subset is: " + count);//size of each subset list
+        logger.info("Integer is: " + i);//size of each subset list
+        logger.info(100/3);
+        List<List<Path>> aList = new ArrayList<>();
+        List<Callable<Integer>> callables = new ArrayList<>();
+        for (List<Path> pathList : subSets) {
+            //callables.add(threadHelperCallable(pathList));
+            aList.add(pathList);
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(i);
+        try {
+            executor.invokeAll(callables)
+                    .stream()
+                    .map(future -> {
+                        try {
+                            return future.get();
+                        }
+                        catch (Exception e) {
+                            throw new IllegalStateException(e);
+                        }
+                    })
+                    .forEach(
+                           System.out::println
+                            //logger::info
+                    );
+        } catch (InterruptedException e) {
+            logger.error("",e);
+        }
+
+    }
+
+
+    @Test
+    public void sumSerial(){
+        long [] array = new long[10000000];        //int total = 0;
+        //populate array
+        for(int i = 1; i < array.length + 1; i++){
+            int index = i - 1;
+            //System.out.println("Index " + index);
+            //System.out.println("Value " + i);
+            array[index] = i;
+            //System.out.println(i);
+        }
+
+        System.out.println("length of array " +array.length);
+        long sum = Arrays.stream(array).sum();
+        long sum2 = LongStream.of(array).sum();
+
+        long total = 0;
+        for (long x : array) {
+            //System.out.println("Sum " + total + "+" + array[i]);
+            total = total + x;
+            //System.out.println("x is: " + x);
+        }
+        System.out.println("total is " + total);
+        System.out.println("Stream sum " + sum);
+        System.out.println("Stream sum2 " + sum2);
+        //System.out.println("Manual " + total);
+    }
+
+    /**
+     * parallelArray
+     * Trying to parallelize the array
+     */
+    @Test
+    public void parallelArray() {
+        //populate array
+        for(int i = 1; i < array.length + 1; i++){
+            int index = i - 1;//safe using int up to a million for index
+            array[index] = i;
+        }
+        /**
+         * we need two parallel threads, one to add
+         * all elements in the array and one to count all
+         * of them
+         */
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        //Callable
+        List<Callable<Long>> callable = Arrays.asList(
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                //threadHelperCallable("add"),
+                threadHelperCallable("search"),
+                threadHelperCallable("search"),
+                threadHelperCallable("search"),
+                threadHelperCallable("search"),
+                threadHelperCallable("search")
+        );
+
+        List<Future<String>> futures = new ArrayList<>();
+        for(Callable callableItem: callable){
+            futures.add(executor.submit(callableItem));
+        }
+
+        for (Future ft: futures) {
+            try {
+                System.out.println(ft.get());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        executor.shutdown();
+
+        ////Executor
+        //try {
+        //    //Invoke all is blocking for all task to finish
+        //    executor.invokeAll(callable)
+        //            .stream()
+        //            .map(future -> {
+        //                try {
+        //                    return future.get();
+        //                }
+        //                catch (Exception e) {
+        //                    throw new IllegalStateException(e);
+        //                }
+        //            })
+        //            .forEach(
+        //                    logger::info
+        //            );
+        //} catch (InterruptedException e) {
+        //    logger.error("",e);
+        //}
+
+    }
+
+    /**
+     * helperCallable
+     *
+     * This function creates callable with parameters
+     */
+    public Callable<Long> threadHelperCallable(String task) {
+        if(task.equals("add")) {
+            return () -> {
+                //System.out.println(Thread.currentThread().getName());
+              return addAllArray();
+            };
+        }else if(task.equals("count")) {
+            return () -> {
+                //System.out.println(Thread.currentThread().getName());
+                return countAllInArray();
+            };
+        }else if(task.equals("search")) {
+            return () -> {
+                //System.out.println(Thread.currentThread().getName());
+                return arraySearch();
+            };
+        }else {
+            return () -> {
+                //System.out.println(Thread.currentThread().getName());
+                return 1L;
+            };
+        }
+
+    }//end parallel
+
+    public static Long addAllArray(){
+        long total = 0;
+        for (long x : array ) {
+            total+=x;
+        }
+        return total;
+    }
+    public static Long countAllInArray(){
+        long total = 0;
+        for (long x : array ) {
+            total++;
+        }
+        return total;
+    }
+    public static Long arraySearch(){
+        long found = 0;
+        long addWork = 0;
+        for(long val: array){
+            if(val == 100 ){
+                for(int i = 0; i < val; i++){
+                    addWork+=i;
+                    for(int z =0; z < 10; z++){
+                        int g = z + 1 -1;
+                        for (int s = 0; s < 10; s++){
+                            int u = s + 1 - 1;
+                        }
+                    }
+                }
+               found = val;
+            }else{
+                for (int x =0; x < 100; x++){
+                    int y = x + 1 - 1;
+                    for(int p = 0; p < 10; p++){
+                        int r = p + 1 -1;
+                        for(int n =0; n < 10; n++){
+                            int w = n + 1 -1;
+                        }
+                    }
+                }
+            }
+        }
+        return found;
+    }
+
+    @Test
+    public void notParallel(){
+        //populate array
+        for(int i = 1; i < array.length + 1; i++){
+            int index = i - 1;//safe using int up to a million for index
+            array[index] = i;
+        }
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        //logger.info(addAllArray());
+        logger.info(arraySearch());
+        logger.info(arraySearch());
+        logger.info(arraySearch());
+        logger.info(arraySearch());
+        logger.info(arraySearch());
+    }
+
+    @Test
+    public void sequentialStream() {
+        List<Long> lng = new ArrayList<>();
+        for (int i = 1; i < 1000000; i++) {
+            lng.add((long) i);
+        }
+
+        Runnable seq = () -> {
+            Boolean ans = lng.stream().isParallel();
+            long lg = lng.stream().count();
+            System.out.println(ans);
+            System.out.println(lg);
+        };
+
+        Runnable par = () -> {
+            //Boolean ansPar = lng.parallelStream().isParallel();
+            long lgPar = lng.parallelStream().count();
+            //System.out.println(ansPar);
+            //System.out.println(lgPar);
+            System.out.println(Thread.currentThread().getName());
+        };
+
+        Thread th = new Thread(seq);
+        th.start();
+        Thread th2 = new Thread(par);
+        th2.start();
+    }
+
+    @Test
+    public void parallelStream(){
+        List<Long> lng = new ArrayList<>();
+        for(int i = 1; i < 1000000; i++){
+            lng.add((long)i);
+        }
+
+        Boolean ans = lng.parallelStream().isParallel();
+        long lg = lng.parallelStream().count();
+        System.out.println(ans);
+        System.out.println(lg);
+    }
     /**
      * findRoomByDate
      *

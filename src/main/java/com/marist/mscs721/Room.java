@@ -130,7 +130,7 @@ public class Room {
      * setBuildings
      *
      * Set building for a room
-     * @param string building
+     * @param  building
      *
      */
 	public void setBuilding(String building){
@@ -150,7 +150,7 @@ public class Room {
      * setBuildings
      *
      * Set building for a room
-     * @param string building
+     * @param location
      *
      */
 	public void setLocation(String location){

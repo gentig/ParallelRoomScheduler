@@ -6,6 +6,7 @@
 package com.marist.mscs721;
 
 //Using Gson library for JSON
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 //Log4j for debugging
 import org.apache.log4j.Logger;
@@ -19,14 +20,16 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.InputMismatchException;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static javafx.application.Platform.exit;
 
-public class RoomScheduler {
+public class RoomScheduler{
     static final Logger logger = Logger.getLogger(RoomScheduler.class);
 	private static Scanner keyboard = new Scanner(System.in);
 	private static final int MINIMUM_ROOM_CAPACITY = 1;
@@ -34,6 +37,7 @@ public class RoomScheduler {
 	private static final int MAX_SUBJECT_LENGTH = 200;
 	//jsonDir is a path outside the project. Not used for now. I might use it later
     private static final String DEVIDER = "---------------------";
+    protected static List<Room> rooms = new ArrayList();
     /**
      * Compare two timestamps. Timestamp in java can be compared directly without
      * using a custom interface. Keep this here just as a reference if you need to
@@ -50,8 +54,9 @@ public class RoomScheduler {
      */
 	public static void main(String[] args) throws IOException {
 		Boolean end = false;
-		ArrayList<Room> rooms = new ArrayList<>();
-		//logger.info("Importing rooms if they are available. We can use JSON files to persist the data" +
+		//List<Room> rooms = new ArrayList<>();
+        rooms = Collections.synchronizedList(rooms);
+        //logger.info("Importing rooms if they are available. We can use JSON files to persist the data" +
         //        "so we import any available rooms first.");
         while (!end) {
             switch (mainMenu()) {
@@ -79,6 +84,9 @@ public class RoomScheduler {
                 case 8:
                     System.out.println(findRoomByDate(rooms));
                     break;
+                 case 9:
+                    System.out.println(scheduleParallel(rooms));
+                    break;
                 default:
                     System.out.println("Wrong menu selection");
                     break;
@@ -95,7 +103,7 @@ public class RoomScheduler {
      *
      * @TODO reuse variables
      */
-	public static String findRoomByDate(ArrayList<Room> roomList)
+	public static String findRoomByDate(List<Room> roomList)
     {
         if(isListEmpty(roomList)){
             logger.error("No rooms available");
@@ -171,7 +179,7 @@ public class RoomScheduler {
      * @param roomList a list of rooms
      * @return String
      * */
-	protected static String listSchedule(ArrayList<Room> roomList) {
+	protected static String listSchedule(List<Room> roomList) {
 		String roomName = "";
         if(!isListEmpty(roomList))
         {
@@ -209,14 +217,15 @@ public class RoomScheduler {
 		int value = -1;
         while(value < 0){
             System.out.println("Main Menu:");
-            System.out.println("  1 - Add a room");
-            System.out.println("  2 - Remove a room");
-            System.out.println("  3 - Schedule a room");
-            System.out.println("  4 - List Schedule");
-            System.out.println("  5 - List Rooms");
-            System.out.println("  6 - Export Rooms");
-            System.out.println("  7 - Import Rooms");
-            System.out.println("  8 - Find Available Room  ");
+            System.out.println("1 - Add a room");
+            System.out.println("2 - Remove a room");
+            System.out.println("3 - Schedule a room");
+            System.out.println("4 - List Schedule");
+            System.out.println("5 - List Rooms");
+            System.out.println("6 - Export Rooms");
+            System.out.println("7 - Import Rooms");
+            System.out.println("8 - Find Available Room");
+            System.out.println("9 - Schedule Parallel");
             System.out.println("Enter your selection: ");
             if(keyboard.hasNextInt()) {
                 value = keyboard.nextInt();
@@ -239,7 +248,7 @@ public class RoomScheduler {
      * @param  roomList the list of rooms
      * @return String
      */
-	protected static String addRoom(ArrayList<Room> roomList) {
+	protected static String addRoom(List<Room> roomList) {
         System.out.println("Add a room:");
 		String name = getRoomName();
 		System.out.println("Room capacity?");
@@ -276,7 +285,7 @@ public class RoomScheduler {
      * @return String
      * @throws IOException cannot export json files
      */
-	protected static String exportRooms(ArrayList<Room> roomList) throws IOException{
+	protected static String exportRooms(List<Room> roomList) throws IOException{
 	    if(!isListEmpty(roomList)) {
             Gson gs = new Gson();
             ArrayList<String> list = new ArrayList<>();
@@ -316,18 +325,20 @@ public class RoomScheduler {
      * @return String
      * @throws IOException cannot import json file/s
      */
-    protected static String importRooms(ArrayList<Room> roomList) throws IOException{
+    protected static String importRooms(List<Room> roomList) throws IOException{
         Gson gson = new Gson();
         //Path pathToDir = Paths.get(jsonDir);//path to dir of Json files //original @see jsonDir field comment
         Path pathToDir = Paths.get("jsonFiles");//"jsonFiles" is directory of all Json files
         JsonFiles jsonFiles = new JsonFiles();//callback object for walking directories and files
         Files.walkFileTree(pathToDir , jsonFiles);
         List<Path> allJsonFilesInPath = JsonFiles.getPaths();//get all paths from JsonFiles
+        logger.info("allJsonFilesInPath: " + allJsonFilesInPath.size());
         //check if we have rooms to import
         if(!isListEmpty(allJsonFilesInPath)) {
             for (Path pth : allJsonFilesInPath) {
                 try (BufferedReader reader = Files.newBufferedReader(pth)) {
                     Room room = gson.fromJson(reader, Room.class);
+                    logger.info(room.getName());
                     if(roomExists(room.getName(),roomList)){
                         logger.info("Room " + room.getName() + " already exists. An update will be performed");
                         //Delete existing room, to be replaced by the import
@@ -354,7 +365,7 @@ public class RoomScheduler {
      * @param roomList a list of rooms
      * @return String
      */
-	protected static String removeRoom(ArrayList<Room> roomList) {
+	protected static String removeRoom(List<Room> roomList) {
 	    String roomName = "";
 	    if(!isListEmpty(roomList)) {
             System.out.println("Remove a room:");
@@ -376,7 +387,7 @@ public class RoomScheduler {
      * @param roomList the list of rooms
      * @return String
      */
-	private static String listRooms(ArrayList<Room> roomList) {
+	public static String listRooms(List<Room> roomList) {
 		System.out.println("Room Name - Capacity - Building - Location");
 		System.out.println(DEVIDER);
 		for (Room room : roomList) {
@@ -392,6 +403,11 @@ public class RoomScheduler {
 		return roomList.size() + " Room(s)";
 	}
 
+	private static String scheduleParallel(List<Room> roomList){
+	    ParallelMeetings.parallelScheduleMeetings(roomList);
+	    return "Success";
+    }
+
 	/**
      * scheduleRoom
      *
@@ -400,7 +416,7 @@ public class RoomScheduler {
      * @param roomList the list of rooms
      * @return String
      **/
-	private static String scheduleRoom(ArrayList<Room> roomList) {
+	private static String scheduleRoom(List<Room> roomList) {
         //Compare interface for comparing timestamps
         compare = (start,end)-> start.after(end);
         String subject = "";
@@ -487,7 +503,7 @@ public class RoomScheduler {
      * @param roomList list of rooms to search
      * @return boolean
      */
-    private static boolean roomExists(String name,ArrayList<Room> roomList) {
+    private static boolean roomExists(String name,List<Room> roomList) {
         for (Room rm : roomList) {
             if( SAME_STRING == name.compareTo(rm.getName())){
                 return true;
@@ -525,7 +541,7 @@ public class RoomScheduler {
      *
      * Check if there is a conflict with before adding a meeting
      *
-     * @param meetings a list of meetings for a room
+     * @param me a list of meetings for a room
      * @param startTimestamp start time of the meeting
      * @param endTimestamp end time of the meeting
      * @return String
@@ -656,7 +672,7 @@ public class RoomScheduler {
      * @param  name name of the room
      * @return Room
      */
-	protected static Room getRoomFromName(ArrayList<Room> roomList, String name) {
+	protected static Room getRoomFromName(List<Room> roomList, String name) {
 		return roomList.get(findRoomIndex(roomList, name));
 	}
 
@@ -669,7 +685,7 @@ public class RoomScheduler {
      * @param roomName room name
      * @return int
      */
-	protected static int findRoomIndex(ArrayList<Room> roomList, String roomName) {
+	protected static int findRoomIndex(List<Room> roomList, String roomName) {
 		int roomIndex = 0;
 
 		for (Room room : roomList) {
@@ -737,7 +753,7 @@ public class RoomScheduler {
      * This function checks if there is at least one room
      * in a list of rooms
      *
-     * @param roomList A list of Rooms
+     * @param list A list of Rooms
      *
      * @return boolean true or false
      */
