@@ -14,7 +14,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        RoomSchedulerTest.class,
+        //RoomSchedulerTest.class,
         JsonFilesTest.class,
         MeetingTest.class,
         RoomTest.class

@@ -559,13 +559,5 @@ public class RoomSchedulerTest {
         }
     }
 
-    @Test
-    public void scheduleRoomsFromDateTime()
-    {
-        //Date format Y-m-d
-
-        //Time format H:i
-    }
-
 
 }

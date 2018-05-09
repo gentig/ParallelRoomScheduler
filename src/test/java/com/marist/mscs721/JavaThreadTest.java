@@ -1,15 +1,18 @@
+/**
+ * Yet Another Software License, 1.0
+ *
+ * Lots of text, specifying the users rights, and whatever ...
+ */
 package com.marist.mscs721;
-import com.sun.javafx.collections.MappingChange;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
 import java.util.concurrent.*;
 
 public class JavaThreadTest {
@@ -18,7 +21,13 @@ public class JavaThreadTest {
     static List<Map<String, String>> rooms = new ArrayList<>();
 
     /**
-     * */
+     * buildRoomWithStarEndTime
+     *
+     * This function is used as an example to build a list with meetings.
+     * It basically builds a list as a list of rooms and adds a hashmap <String,String>
+     * as two entries for meetings. This function is not used now but it is here
+     * just as an reference
+     */
     @Test
     public void buildRoomWithStarEndTime() {
         //build 10 rooms
@@ -47,7 +56,12 @@ public class JavaThreadTest {
     }
 
     /*-----------------------------------------------Parallelizing adding meeting--------------------------------*/
-    //Add Room task
+    /**
+     * addMeetings
+     *
+     * This function is called crom callableHelper to add meetings
+     * to the rooms.
+     */
     public Long adddMeetings(Map<String, String> room, int numberOfMeetings) {
         for (int i = 0; i < numberOfMeetings; i++) {
             room.put("" + i, "" + (i + 1));
@@ -55,15 +69,26 @@ public class JavaThreadTest {
         return (long) room.size();
     }
 
-    //Add Room task
-    public Long adddMeetingsSequential(Map<String, String> room, int numberOfMeetings) {
+    /**
+     * addMeetingsVoid
+     *
+     * This function is similar to the function above but it does not
+     * return anything. Used for executors without the future
+     */
+    public void adddMeetingsVoid(Map<String, String> room, int numberOfMeetings) {
         for (int i = 0; i < numberOfMeetings; i++) {
             room.put("" + i, "" + (i + 1));
         }
         System.out.println(room.size());
-        return (long) room.size();
     }
 
+    /**
+     * createRooms
+     *
+     * This function creates rooms which is a list consisting of meetings
+     * e.g. the list is the list of rooms and hashmap in it represents a meeting
+     * <String, String>
+     * */
     public boolean createRooms(int numberOfRooms) {
         for (int i = 0; i < numberOfRooms; i++) {
             rooms.add(i, new HashMap<>());
@@ -75,6 +100,11 @@ public class JavaThreadTest {
         }
     }
 
+    /**
+     * testRooms
+     *
+     * This function tests if the list of rooms with meetings is created
+     */
     @Test
     public void testRooms() {
         boolean tr = createRooms(10);
@@ -82,8 +112,8 @@ public class JavaThreadTest {
     }
 
     /**
-     * executorExecute
-     * <p>
+     * executorExecuteMeeting
+     *
      * This functions executes the runnable task immediately
      */
     @Test
@@ -96,7 +126,7 @@ public class JavaThreadTest {
             for (int i = 0; i < numberOfRooms; i++) {
                 Map<String, String> room = rooms.get(i);
                 Runnable task = () -> {
-                    adddMeetingsSequential(room, numberOfMeetings);
+                    adddMeetingsVoid(room, numberOfMeetings);
                 };
                 executor.execute(task);
             }
@@ -108,8 +138,10 @@ public class JavaThreadTest {
     }
 
     /**
-     * parallelArray
-     * Trying to parallelize the array
+     * parallelInvokeAllRooms
+     *
+     * This function uses invokeAll with futures to get the value from callable
+     * when thread finishes execution
      */
     @Test
     public void parallelInvokeAllRooms() {
@@ -124,12 +156,11 @@ public class JavaThreadTest {
         int numberOfRooms = 40000;//rooms
         int numberOfMeetings = 100;//meetings
         boolean tr = createRooms(numberOfRooms);
-
+        //Populate callableList
         for (int i = 0; i < rooms.size(); i++) {
             Map<String, String> room = rooms.get(i);
             callableList.add(threadHelperCallableRooms(room, numberOfMeetings));
         }
-
         //Executor
         try {
             //Invoke all is blocking for all tasks to finish
@@ -153,7 +184,12 @@ public class JavaThreadTest {
         }
     }
 
-    //Sequential adding meetings
+    /**
+     * sequentialAddMeetings
+     *
+     * This function will add meetings in sequence without parallel
+     * threads
+     */
     @Test
     public void sequentialAddMeetings() {
         int numberOfRooms = 40000;//rooms
@@ -162,16 +198,15 @@ public class JavaThreadTest {
         if (tr) {
             for (int i = 0; i < rooms.size(); i++) {
                 Map<String, String> room = rooms.get(i);
-                adddMeetingsSequential(room, numberOfMeetings);
+                adddMeetingsVoid(room, numberOfMeetings);
             }
         }
     }
 
     /**
      * threadHelperCallable
-     * <p>
-     * This function returns a callable
      *
+     * This function returns a callable to be used in executors
      * @return callable that returns a long
      */
     public Callable<Long> threadHelperCallableRooms(Map<String, String> room, int numberOfMeetings) {
@@ -181,9 +216,19 @@ public class JavaThreadTest {
     }
 
     /*-----------------------------Parallel and sequential testing array below------------------------------------*/
+    /**
+     *
+     * !!!!!!!!!!!!!!!!!!!---- IMPORTANT----!!!!!!!!!!!!!!!!!!!
+     *
+     * Below there are multiple functions to run certain tasks in parallel and
+     * in sequence. Using this example we can clearly see the CPU throughput
+     * and speed of parallel processing and sequential processing.
+     *
+     */
 
     /**
-     * parallelArray
+     * parallelInvokeAll
+     *
      * Trying to parallelize the array
      */
     @Test
@@ -207,7 +252,6 @@ public class JavaThreadTest {
                 threadHelperCallable(),
                 threadHelperCallable()
         );
-
         //Executor
         try {
             //Invoke all is blocking for all task to finish
@@ -233,7 +277,7 @@ public class JavaThreadTest {
 
     /**
      * parallelFutureSubmit
-     * <p>
+     *
      * We are using future to get the return value from a callable
      * task. Remember that future.get is blocking
      */
@@ -273,9 +317,8 @@ public class JavaThreadTest {
 
     /**
      * threadHelperCallable
-     * <p>
-     * This function returns a callable
      *
+     * This function returns a callable
      * @return callable that returns a long
      */
     public Callable<Long> threadHelperCallable() {
@@ -286,7 +329,7 @@ public class JavaThreadTest {
 
     /**
      * executorExecute
-     * <p>
+     *
      * This functions executes the runnable task immediately
      */
     @Test
@@ -306,10 +349,12 @@ public class JavaThreadTest {
 
     /**
      * someTask
-     * <p>
+     *
      * This function performs some task or work called by callable
      * and runs in the thread. This task can be called by a function
-     * in sequence as well.
+     * in sequence as well. When we use futures we need to return something
+     * from callable that calls this function in order to print it while work
+     * is being done.
      *
      * @returns long sum
      */
@@ -327,10 +372,12 @@ public class JavaThreadTest {
 
     /**
      * someTask
-     * <p>
+     *
      * This function performs some task or work called by callable
      * and runs in the thread. This task can be called by a function
-     * in sequence as well.
+     * in sequence as well. This function does not return anything. If
+     * we are not using futures, as in the case of executor.execute is better
+     * to use this function to print something when work is being done.
      */
     public void someTaskVoid() {
         long sum = 0;
@@ -346,7 +393,7 @@ public class JavaThreadTest {
 
     /**
      * testSequence
-     * <p>
+     *
      * This function runs the task in a sequence without
      * threads and parallelization so we can see the difference in CPU
      * throughput and speed compared to running the task in parallel
@@ -359,27 +406,32 @@ public class JavaThreadTest {
     }
 
     /*-----------------------------------------------Extra below----------------------------------------------*/
-    //Add Room task
+    /**
+     * addMeetings
+     *
+     * This function tests the creation time for meetings to be
+     * used with threads to add a number of meetings per room
+     */
     @Test
     public void adddMeetings() {
         int numberOfMeetings = 1000;
         long meetingSize = 0L;
-        String dateString = "2018-06-01 08:00:00";
+        String dateString = "2018-06-01 08:00:00";//start date
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss",Locale.US);
         LocalDateTime dateTime = LocalDateTime.parse(dateString, formatter);
-        //System.out.println(dateTime.format(formatter));
-        //dateTime = dateTime.plusHours(1);
-        //System.out.println(dateTime.plusHours(1).format(formatter));
 
         if (numberOfMeetings > 1000) {
             logger.error("Number of meetings bigger than 1000. System willl exit");
             System.exit(0);
         } else {
+            //Current approach for meeting time
             //Timestamp startTimestamp = Timestamp.valueOf("2018-06-01" + " " + "00:00:00" + ":00");//we need seconds for timestamp
             //Timestamp endTimestamp = Timestamp.valueOf("2018-06-01" + " " + "00:10:00" + ":00" + ":00");//we need seconds for timestamp
             //String subject = "Parallel";
             //Meeting meeting = new Meeting(startTimestamp, endTimestamp, subject);
+
+            //Building meeting times
             for (int i = 0; i < numberOfMeetings; i++) {
                 Timestamp startTimestamp = Timestamp.valueOf(dateTime.format(formatter));//we need seconds for timestamp
                 Timestamp endTimestamp = Timestamp.valueOf(dateTime.plusHours(1).format(formatter));//we need seconds for timestamp
@@ -388,9 +440,7 @@ public class JavaThreadTest {
 
                 System.out.println(startTimestamp.toLocalDateTime().format(formatter));
                 System.out.println(endTimestamp.toLocalDateTime().format(formatter));
-                //room.addMeeting(meeting);
             }
         }
-        //return (long) meetingSize;
     }
 }

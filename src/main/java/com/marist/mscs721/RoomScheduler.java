@@ -335,21 +335,19 @@ public class RoomScheduler{
         logger.info("allJsonFilesInPath: " + allJsonFilesInPath.size());
         //check if we have rooms to import
         if(!isListEmpty(allJsonFilesInPath)) {
-            for (Path pth : allJsonFilesInPath) {
+            for (Path pth : allJsonFilesInPath)
                 try (BufferedReader reader = Files.newBufferedReader(pth)) {
                     Room room = gson.fromJson(reader, Room.class);
-                    logger.info(room.getName());
-                    if(roomExists(room.getName(),roomList)){
+                    if (roomExists(room.getName(), roomList)) {
                         logger.info("Room " + room.getName() + " already exists. An update will be performed");
                         //Delete existing room, to be replaced by the import
-                        roomList.remove(findRoomIndex(roomList,room.getName()));
+                        roomList.remove(findRoomIndex(roomList, room.getName()));
                     }
                     roomList.add(room);
                 } catch (IOException e) {
                     logger.error("Error " + e);
                     return "Error";
                 }
-            }
         }else {
             logger.error("No rooms were imported. Missing import files");
             return "Error";

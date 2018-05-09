@@ -1,3 +1,8 @@
+/**
+ * Yet Another Software License, 1.0
+ *
+ * Lots of text, specifying the users rights, and whatever ...
+ */
 package com.marist.mscs721;
 
 import org.apache.log4j.Logger;
@@ -18,7 +23,9 @@ import java.util.concurrent.Executors;
  * */
 public class ParallelMeetings{
     static final Logger logger = Logger.getLogger(ParallelMeetings.class);
-    private static  int numberOfMeetings = 1000000;
+    private static  int numberOfMeetings = 100;
+    //Change this to the number of threads you want to run the program with
+    private static int numberOfThreads = 16;
     /**
      * parallelScheduleMeetings
      *
@@ -32,7 +39,7 @@ public class ParallelMeetings{
          * all elements in the array and one to count all
          * of them
          */
-        ExecutorService executor = Executors.newFixedThreadPool(16);
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
         List<Callable<Long>> callableList = new ArrayList<>();
 
         for(int i = 0; i < roomsList.size(); i++){
@@ -60,7 +67,7 @@ public class ParallelMeetings{
             logger.error("",e);
         }
         executor.shutdown();
-        while (!executor.isTerminated()){}
+        while (!executor.isTerminated()){ }
     }
 
     /**
@@ -81,7 +88,7 @@ public class ParallelMeetings{
         String dateString = "2018-06-01 08:00:00";//Starting in june
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.US);
         LocalDateTime dateTime = LocalDateTime.parse(dateString, formatter);
-        if(numberOfMeetings > 1000000){
+        if(numberOfMeetings > 1000){
             logger.error("Number of meetings bigger than 1000000. System willl exit");
             System.exit(0);
         }else {
