@@ -79,12 +79,12 @@ public class ParallelMeetings{
      */
     public static Callable<Long> threadHelperCallableRooms(Room room, int numberOfMeetings) {
         return () -> {
-            return adddMeetings(room,numberOfMeetings);
+            return addMeetings(room,numberOfMeetings);
         };
     }
 
     //Add Room task
-    public static Long adddMeetings(Room room, int numberOfMeetings){
+    public static Long addMeetings(Room room, int numberOfMeetings){
         String dateString = "2018-06-01 08:00:00";//Starting in june
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.US);
         LocalDateTime dateTime = LocalDateTime.parse(dateString, formatter);
